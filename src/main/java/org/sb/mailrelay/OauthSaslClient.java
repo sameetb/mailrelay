@@ -4,6 +4,8 @@
 package org.sb.mailrelay;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -18,6 +20,8 @@ import javax.security.sasl.SaslException;
  */
 class OauthSaslClient implements SaslClient {
 
+	private static final Logger log = Logger.getLogger(OauthSaslClient.class.getPackage().getName());
+	
 	private final String oauthToken;
 	private final CallbackHandler callbackHandler;
 
@@ -43,16 +47,21 @@ class OauthSaslClient implements SaslClient {
 	public byte[] evaluateChallenge(byte[] challenge) throws SaslException {
 		if (isComplete) {
 			// Empty final response from server, just ignore it.
+			log.fine(() -> "Complete .. ignoring challenge");
 			return new byte[] {};
 		}
+
+		log.fine(() -> "Evauating challenge");
 
 		NameCallback nameCallback = new NameCallback("Enter name");
 		Callback[] callbacks = new Callback[] { nameCallback };
 		try {
 			callbackHandler.handle(callbacks);
 		} catch (UnsupportedCallbackException e) {
+			log.log(Level.SEVERE, "Unsupported callback", e);
 			throw new SaslException("Unsupported callback: " + e);
 		} catch (IOException e) {
+			log.log(Level.SEVERE, "Failed to execute callback", e);
 			throw new SaslException("Failed to execute callback: " + e);
 		}
 		String email = nameCallback.getName();

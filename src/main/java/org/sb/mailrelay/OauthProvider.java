@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 import javax.mail.MessagingException;
 import javax.mail.Session;
@@ -20,6 +21,8 @@ import com.sun.mail.smtp.SMTPTransport;
  */
 public class OauthProvider extends Provider {
 
+	private static final Logger log = Logger.getLogger(OauthProvider.class.getPackage().getName());
+	
 	private static final long serialVersionUID = 1L;
 
 	static {
@@ -58,6 +61,7 @@ public class OauthProvider extends Provider {
 	 */
 	static SMTPTransport connectToSmtp(String host, int port, String userEmail, String oauthToken, boolean debug)
 			throws IOException {
+		log.info("Connecting to smtp server at " + host +  ":" + port);
 		Properties props = new Properties();
 		props.put("mail.smtp.starttls.enable", "true");
 		props.put("mail.smtp.starttls.required", "true");

@@ -73,7 +73,7 @@ public class Send implements Cmd
 			SMTPTransport smtpTransport = getTransport(nvp, flags, senderAddress, cred, cache);
 			
 			smtpTransport.sendMessage(msg, allRecipients);
-			smtpTransport.close();
+			if(!cache) smtpTransport.close();
 		} catch (MessagingException | GeneralSecurityException e) {
 			// TODO Auto-generated catch block
 			throw new IOException(e);
@@ -94,9 +94,14 @@ public class Send implements Cmd
 		{
 			ConnMgr<SMTPTransport> st = transMap.get(senderAddress);
 			if(st == null )
+			synchronized(this)
 			{
-				st = ConnMgr.wrap(ts, t -> t.isConnected(), Try.uncheck(t -> t.close()));
-				transMap.put(senderAddress, st);
+				st = transMap.get(senderAddress);
+				if(st == null )
+				{
+					st = ConnMgr.wrap(ts, t -> t.isConnected(), Try.uncheck(t -> t.close()));
+					transMap.put(senderAddress, st);
+				}
 			}
 			return st.get();
 		}
@@ -111,17 +116,25 @@ public class Send implements Cmd
 		{
 			cred = credMap.get(senderAddress);
 			if(cred == null)
+			synchronized(this)
 			{
-				cred = scred.get();
-				credMap.put(senderAddress, cred);
+				cred = credMap.get(senderAddress);
+				if(cred == null)
+				{
+					cred = scred.get();
+					credMap.put(senderAddress, cred);
+				}
 			}
-			return cred;
 		}
 		else
 			cred = scred.get();
 		
 		if(isExpired(cred))
+		synchronized(cred)	
+		{
+			log.info("Refreshing expired token");
 			cred.refreshToken();
+		}
 		
 		return cred;
 	}
@@ -138,7 +151,8 @@ public class Send implements Cmd
 	private boolean isExpired(Credential cred)
 	{
 		Long exp = cred.getExpiresInSeconds();
-		return exp == null || exp < 10;
+		log.fine(() -> "Token expiry is " + exp);
+		return exp == null || exp < 60;
 	}
 	
 	private Path mailrelay(Path home)

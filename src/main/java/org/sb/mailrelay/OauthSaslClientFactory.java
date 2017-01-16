@@ -3,6 +3,7 @@
  */
 package org.sb.mailrelay;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import java.util.logging.Logger;
@@ -17,7 +18,7 @@ import javax.security.sasl.SaslClientFactory;
  */
 public class OauthSaslClientFactory implements SaslClientFactory {
 
-	private static final Logger logger = Logger.getLogger(OauthSaslClientFactory.class.getPackage().getName());
+	private static final Logger log = Logger.getLogger(OauthSaslClientFactory.class.getPackage().getName());
 
 	public static final String OAUTH_TOKEN_PROP = "mail.imaps.sasl.mechanisms.oauth2.oauthToken";
 
@@ -31,7 +32,7 @@ public class OauthSaslClientFactory implements SaslClientFactory {
 			}
 		}
 		if (!matchedMechanism) {
-			logger.info("Failed to match any mechanisms");
+			log.severe("Failed to match any mechanisms in " + Arrays.deepToString(mechanisms));
 			return null;
 		}
 		return new OauthSaslClient((String) props.get(OAUTH_TOKEN_PROP), callbackHandler);
